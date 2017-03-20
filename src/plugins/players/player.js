@@ -11,9 +11,12 @@ import { Logger } from '../../shared/logger';
 import { PlayerDb } from './player.db';
 import { PlayerMovement } from './player.movement';
 import { ItemGenerator } from '../../shared/item-generator';
+import { MonsterGenerator } from '../../shared/monster-generator';
+import { ShopGenerator } from '../../shared/shop-generator';
 
 import { DataUpdater } from '../../shared/data-updater';
 import { EventHandler } from '../events/eventhandler';
+import { FindItem } from '../events/events/FindItem';
 
 import * as Events from '../events/events/_all';
 import * as Achievements from '../achievements/achievements/_all';
@@ -52,6 +55,7 @@ export class Player extends Character {
     this.$updateCollectibles = true;
     this.$updateGenders = true;
     this.$updatePremium = true;
+    this.$updateShop = true;
 
     this.$partyName = null;
 
@@ -118,6 +122,8 @@ export class Player extends Character {
       }
     }
 
+    if(this.$battle) return;
+
     if(this.$personalities.isActive('Camping')) {
       this.$statistics.incrementStat('Character.Movement.Camping');
       this.save();
@@ -127,6 +133,7 @@ export class Player extends Character {
     this.attemptToDisbandSoloParty();
 
     try {
+      Logger.silly('Player:TakeTurn', `${this.name} moving.`);
       this.moveAction();
       EventHandler.tryToDoEvent(this);
     } catch(e) {
@@ -156,9 +163,13 @@ export class Player extends Character {
     emitter.emit('player:levelup', { player: this });
   }
 
+  _calcModGold(baseXp) {
+    return this.liveStats.gold(baseXp);
+  }
+
   gainGold(baseGold = 1, calc = true) {
     
-    const gold = calc ? this.liveStats.gold(baseGold) : baseGold;
+    const gold = calc ? this._calcModGold(baseGold) : baseGold;
     if(_.isNaN(gold) || gold === 0 || Math.sign(gold) !== Math.sign(baseGold)) return 0;
     
     super.gainGold(gold);
@@ -172,9 +183,13 @@ export class Player extends Character {
     return gold;
   }
 
+  _calcModXp(baseXp) {
+    return this.liveStats.xp(baseXp);
+  }
+
   gainXp(baseXp = 1, calc = true) {
 
-    const xp = calc ? this.liveStats.xp(baseXp) : baseXp;
+    const xp = calc ? this._calcModXp(baseXp) : baseXp;
     if(_.isNaN(xp) || xp === 0 || Math.sign(xp) !== Math.sign(baseXp)) return 0;
     
     super.gainXp(xp);
@@ -245,7 +260,7 @@ export class Player extends Character {
     const choice = _.find(this.choices, { id });
     if(!choice) return;
     const result = Events[choice.event].makeChoice(this, id, response);
-    if(result === false) return Events[choice.event].feedback(this);
+    if(_.isString(result)) return;
     this.$statistics.batchIncrement(['Character.Choice.Chosen', `Character.Choice.Choose.${response}`]);
     this.removeChoice(id);
     this.update();
@@ -318,11 +333,12 @@ export class Player extends Character {
       }
     };
 
+    Logger.silly('Player:Move', `${this.name} doing tile check`);
     partyTileCheck();
 
     let attempts = 1;
     while(!this.$playerMovement.canEnterTile(this, tile)) {
-      if (attempts > 8) {
+      if(attempts > 8) {
         Logger.error('Player', new Error(`Player ${this.name} is position locked at ${this.x}, ${this.y} in ${this.map}`));
         break;
       }
@@ -333,6 +349,7 @@ export class Player extends Character {
       partyTileCheck();
 
       attempts++;
+      Logger.silly('Player:Move', `${this.name} doing tile enter check again ${attempts}`);
     }
 
     if(!tile.terrain) {
@@ -345,13 +362,26 @@ export class Player extends Character {
 
     const mapInstance = GameState.getInstance().world.maps[this.map];
 
+    Logger.silly('Player:Move', `${this.name} doing validation`);
+
     if(!mapInstance || this.x <= 0 || this.y <= 0 || this.y > mapInstance.height || this.x > mapInstance.width) {
       Logger.error('PlayerMovement', new Error(`Out of bounds for ${this.name} on ${this.map}: ${this.x}, ${this.y}`));
       this.moveToStart();
     }
 
+    const oldRegion = this.oldRegion;
+
     this.oldRegion = this.mapRegion;
     this.mapRegion = tile.region;
+
+    Logger.silly('Player:Move', `${this.name} possibly doing shop`);
+    if(!this.$shop || (oldRegion !== this.mapRegion)) {
+      this.$updateShop = true;
+
+      Logger.silly('Player:Move', `${this.name} possibly doing shop (IN)`);
+      this.$shop = ShopGenerator.regionShop(this);
+      Logger.silly('Player:Move', `${this.name} possibly doing shop (AFTER)`);
+    }
 
     this.mapPath = tile.path;
 
@@ -378,9 +408,34 @@ export class Player extends Character {
       incrementStats.push('Character.Movement.Party');
     }
 
+    Logger.silly('Player:Move', `${this.name} incrementing stats`);
     this.$statistics.batchIncrement(incrementStats);
 
+    Logger.silly('Player:Move', `${this.name} gaining xp`);
     this.gainXp(SETTINGS.xpPerStep);
+  }
+
+  buyShopItem(itemId) {
+    const items = _.get(this, '$shop.slots', []);
+    const item = _.find(items, { id: itemId });
+
+    if(!item) return 'Item does not exist';
+
+    if(this.gold < item.price) return 'Too expensive for your blood';
+
+    this.gold -= item.price;
+    delete item.price;
+
+    FindItem.operateOn(this, null, item);
+
+    this.$shop.slots = _.without(this.$shop.slots, item);
+
+    this.$statistics.incrementStat('Character.Gold.Spent', item.price);
+    this.$statistics.incrementStat('Character.Item.Buy');
+
+    this.$updateEquipment = true;
+    this.$updateShop = true;
+    this.update();
   }
 
   equip(item) {
@@ -459,7 +514,6 @@ export class Player extends Character {
   _checkAchievements() {
     this.$pets.checkPets(this);
 
-    Logger.silly('Player:TakeTurn', `${this.name} actually checking new achievements.`);
     const newAchievements = this.$achievements.checkAchievements(this);
 
     if(newAchievements.length > 0) {
@@ -470,6 +524,14 @@ export class Player extends Character {
 
   _updatePlayer() {
     this.$dataUpdater(this.name, 'player', this.buildTransmitObject());
+  }
+
+  _updateShop() {
+    this.$dataUpdater(this.name, 'shop', this.$shop || { slots: [] });
+  }
+
+  _updateBossTimers() {
+    this.$dataUpdater(this.name, 'bosstimers', MonsterGenerator.bossTimers);
   }
 
   _updateParty(force = false) {
@@ -546,8 +608,24 @@ export class Player extends Character {
     this._updateParty();
     this._updateSystem();
 
+    if(this.$updateShop) {
+      this.$updateShop = false;
+      this._updateShop();
+    }
+
     if(this.$updateEquipment) {
+      this.$updateEquipment = false;
       this._updateEquipment();
+    }
+
+    if(this.$updateCollectibles) {
+      this.$updateCollectibles = false;
+      this._updateCollectibles();
+    }
+
+    if(this.$updateAchievements) {
+      this.$updateAchievements = false;
+      this._updateAchievements();
     }
 
     if(this.$updateGenders) {

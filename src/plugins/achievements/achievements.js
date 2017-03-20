@@ -109,7 +109,6 @@ export class Achievements {
     return _(AllAchievements)
       .values()
       .map(ach => {
-        Logger.silly('ACHIEVEMENT', `checking ${ach.name}`);
         return ach.achievementData(player) || [];
       })
       .flattenDeep()
@@ -132,31 +131,24 @@ export class Achievements {
   checkAchievements(player) {
     try {
       const earned = this._allAchievements(player);
-      Logger.silly('Achievement', `Earned ${earned}`);
       const mine = this.achievements;
-      Logger.silly('Achievement', `Mine ${mine}`);
 
       const newAchievements = [];
       _.each(earned, ach => {
-        Logger.silly('Achievement', `Checking ${player.name}|${ach}`);
         if(mine[ach.name] && mine[ach.name].tier >= ach.tier) return;
         newAchievements.push(ach);
       });
 
-      Logger.silly('Achievement', `New ${newAchievements}`);
 
       // always update the achievement data just in case
       this.achievements = {};
       _.each(earned, ach => {
-        Logger.silly('Achievement', `Adding ${ach}`);
         this.addAchievement(ach);
       });
 
-      Logger.silly('Achievement', 'Saving');
       this.save();
 
       if(newAchievements.length > 0) {
-        Logger.silly('Achievement', 'Recalculating');
         player.recalculateStats();
       }
 

@@ -121,7 +121,9 @@ class AssetDomainHandler {
 }
 
 class PlayerOwnedDomainHandler {
-  static pet() {
+  static pet(player) {
+    const pet = player.$pets.activePet;
+    if(pet) return pet.fullname;
     return AllDomains.placeholder();
   }
   static guild() {
@@ -244,6 +246,7 @@ export class MessageParser {
     if(extra.weaponName)  extra.weaponName = `«${extra.weaponName}»`;
     if(extra.targetName)  extra.targetName = `«${extra.targetName}»`;
     if(extra.casterName)  extra.casterName = `«${extra.casterName}»`;
+    if(extra.treasure)    extra.treasure = `«${extra.treasure}»`;
     if(extra.deflectItem) extra.deflectItem = `«${extra.deflectItem}»`;
     if(extra.collectible) extra.collectible = `«${extra.collectible}»`;
 

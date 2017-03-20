@@ -24,6 +24,7 @@ plugin:gm:toggleachievement | targetName, achievement | Mod only. Toggle a perma
 plugin:gm:togglemod | targetName | Mod only. Toggle moderator status for the target.
 plugin:pet:attr | newAttr | Change your pets attribute.
 plugin:pet:buy | petType, petName | Buy a new pet.
+plugin:pet:pass | itemId, petId | Pass an item from your pets inventory to another pet.
 plugin:pet:unequip | itemId | Unequip an item from your pets gear.
 plugin:pet:feed | gold | Feed your pet gold.
 plugin:pet:feedmax |  | Feed your pet maximum gold.
@@ -39,6 +40,7 @@ plugin:pet:swap | petType | Swap to a different pet.
 plugin:pet:takegold |  | Take your pets gold.
 plugin:pet:upgrade | upgradeAttr | Upgrade a facet of your pet.
 plugin:player:ascend |  | Ascend.
+plugin:player:buyshopitem | itemId | Buy an item from the shop.
 plugin:player:makechoice | id, response | Make a choice from the choice log.
 plugin:player:exists | userId | Unauthenticated. Check if a particular player exists for auto-login purposes.
 plugin:player:changegender | gender | Change your gender based on the existing gender list.
@@ -49,11 +51,13 @@ plugin:player:partyleave |  | Leave your current party.
 plugin:player:togglepersonality | personality | Turn a personality on or off.
 plugin:player:imregisteringrightnowdontkillme |  | Send this to the server to not have your socket killed while registering.
 plugin:player:request:achievements |  | Request achievement data. Generally used only when looking at achievements.
+plugin:player:request:bosstimers |  | Request bosstimer data. Generally used only when looking at maps.
 plugin:player:request:collectibles |  | Request collectible data. Generally used only when looking at collectibles.
 plugin:player:request:equipment |  | Request equipment data. Generally used only when looking at equipment.
 plugin:player:request:party |  | Request party data. Generally used only when looking at overview.
 plugin:player:request:personalities |  | Request personality data. Generally used only when looking at personalities.
 plugin:player:request:pets |  | Request pet data.
+plugin:player:request:shop |  | Request shop data. Generally used only when looking at shop data.
 plugin:player:request:statistics |  | Request statistics data. Generally used only when looking at statistics.
 plugin:player:changetitle | title | Change your title.
 plugin:premium:buyilp | ilpBuy | Buy ILP with gold.

@@ -55,6 +55,7 @@ export class Event {
   }
 
   static emitMessage({ affected, eventText, category, extraData }) {
+    if(!_.isArray(affected)) affected = [affected];
     emitter.emit('player:event', { affected, eventText, category, extraData });
   }
 
@@ -64,5 +65,6 @@ export class Event {
       spark.write({ type: 'error', title: '', notify: message });
       next();
     }, () => {});
+    return message;
   }
 }
