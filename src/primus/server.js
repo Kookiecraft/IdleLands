@@ -115,6 +115,30 @@ export const primus = (() => {
     }
   };
 
+  primus.joinGuildChat = (player) => {
+    if(!player || !player.guildName) return;
+    _.each(primus.players[player.name], spark => {
+      if(!spark) return;
+      try {
+        spark.join(`chat:channel:Guild:${player.guildName}`);
+      } catch(e) {
+        Logger.error('Primus:JoinGuildChat', e);
+      }
+    });
+  };
+
+  primus.leaveGuildChat = (player) => {
+    if(!player || !player.guildName) return;
+    _.each(primus.players[player.name], spark => {
+      if(!spark) return;
+      try {
+        spark.leave(`chat:channel:Guild:${player.guildName}`);
+      } catch(e) {
+        Logger.error('Primus:LeaveGuildChat', e);
+      }
+    });
+  };
+
   primus.emitToPlayers = (players = [], data) => {
     _.each(players, player => {
       _.each(primus.players[player], spark => {
