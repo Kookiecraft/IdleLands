@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { GameState } from '../../core/game-state';
 import { primus } from '../../primus/server';
 import { emitter as PlayerEmitter } from '../players/_emitter';
+import { Logger } from '../../shared/logger';
 
 import {
   GuildReloadRedis,
@@ -130,8 +131,7 @@ export class Guild {
       member.lastSeen = Date.now();
     }
 
-    this.save();
-    this.updateAllOnlineMembers();
+    this.save(true);
   }
 
 
@@ -139,11 +139,11 @@ export class Guild {
     return mod.rank < member.rank || mod.rank <= MOD && member.unacceptedInvite;
   }
 
-  kickMemberName(name) {
-    this.kickMember(this.getMemberByName(name));
+  kickMemberName(name, propagate = true) {
+    this.kickMember(this.getMemberByName(name), propagate);
   }
 
-  kickMember(member: GuildMember) {
+  kickMember(member: GuildMember, propagate = true) {
 
     // check if they're online, remove guildName (basically, call memberLeave)
     const onlinePlayer = GameState.getInstance().getPlayer(member.name);
@@ -157,9 +157,9 @@ export class Guild {
 
       // if not online, dig into db and unset guildName
       this.$guildDb.removePlayerFromGuild(member.name);
-      this.save();
+      this.save(true);
 
-    } else {
+    } else if(propagate) {
       GuildKickRedis(this.name, member.name);
     }
 
@@ -184,11 +184,11 @@ export class Guild {
     return member;
   }
 
-  memberJoinName(newMemberName, push = false) {
-    this.memberJoin({ name: newMemberName }, push);
+  memberJoinName(newMemberName, push = false, propagate = true) {
+    this.memberJoin({ name: newMemberName }, push, propagate);
   }
 
-  memberJoin(newMember, push = false) {
+  memberJoin(newMember, push = false, propagate = true) {
 
     const onlinePlayer = GameState.getInstance().getPlayer(newMember.name);
     if(onlinePlayer) {
@@ -220,19 +220,18 @@ export class Guild {
       primus.joinGuildChat(onlinePlayer);
       PlayerEmitter.emit('player:changeguildstatus', { player: onlinePlayer });
 
-      this.save();
-      this.updateAllOnlineMembers();
+      this.save(true);
 
-    } else {
+    } else if(propagate) {
       GuildJoinRedis(this.name, newMember.name);
     }
   }
 
-  memberLeaveName(playerName) {
-    this.memberLeave({ name: playerName });
+  memberLeaveName(playerName, propagate = true) {
+    this.memberLeave({ name: playerName }, propagate);
   }
 
-  memberLeave(player) {
+  memberLeave(player, propagate = true) {
 
     const onlinePlayer = GameState.getInstance().getPlayer(player.name);
 
@@ -266,28 +265,29 @@ export class Guild {
       PlayerEmitter.emit('player:changeguildstatus', { player: onlinePlayer });
 
       this.members = _.without(this.members, memberInList);
-      this.save();
+      this.save(true);
 
       if(this.members.length === 0) {
         this.disband();
       }
 
-      this.updateAllOnlineMembers();
-
-    } else {
+    } else if(propagate) {
       GuildLeaveRedis(this.name, player.name);
     }
   }
 
-  inviteMemberName(byName, playerName) {
-    this.inviteMember({ name: byName }, { name: playerName });
+  inviteMemberName(byName, playerName, propagate = true) {
+    Logger.silly('Guild', `${byName} inviting (by name) ${playerName} {prop=${propagate}}`);
+    this.inviteMember({ name: byName }, { name: playerName }, propagate);
   }
 
-  inviteMember(by, player) {
+  inviteMember(by, player, propagate = true) {
 
+    Logger.silly('Guild', `${by.name} inviting ${player.name} {prop=${propagate}}`);
     const onlinePlayer = GameState.getInstance().getPlayer(player.name);
     if(onlinePlayer) {
-      player.guildInvite = {
+      Logger.silly('Guild', `Found ${onlinePlayer.name} {prop=${propagate}}`);
+      onlinePlayer.guildInvite = {
         invitedAt: Date.now(),
         inviter: by.name,
         name: this.name,
@@ -297,15 +297,16 @@ export class Guild {
         founded: this.founded
       };
 
-      const newMember = this.createMemberFromPlayer(player);
+      const newMember = this.createMemberFromPlayer(onlinePlayer);
       newMember.unacceptedInvite = true;
       this.members.push(newMember);
 
-      this.save();
-      player._saveSelf();
-      player._updateGuild();
+      this.save(true);
+      onlinePlayer._saveSelf();
+      onlinePlayer._updateGuild();
 
-    } else {
+    } else if(propagate) {
+      Logger.silly('Guild', `propagating invite for ${player.name} {prop=${propagate}}`);
       GuildInviteRedis(this.name, by.name, player.name);
     }
   }
@@ -313,14 +314,14 @@ export class Guild {
   promoteMember(memberName: string) {
     const member = this.getMemberByName(memberName);
     member.rank -= 2;
-    this.save();
+    this.save(true);
     this.updateAllOnlineMembers();
   }
 
   demoteMember(memberName: string) {
     const member = this.getMemberByName(memberName);
     member.rank += 2;
-    this.save();
+    this.save(true);
     this.updateAllOnlineMembers();
   }
 
@@ -348,8 +349,7 @@ export class Guild {
 
   changeMOTD(motd: string) {
     this.motd = motd;
-    this.save();
-    this.updateAllOnlineMembers();
+    this.save(true);
   }
 
   setTaxRate(taxRate: number) {
@@ -358,11 +358,15 @@ export class Guild {
     // consciously not updating all members here - small update, not really worth it.
   }
 
-  async save() {
+  async save(forceUpdateOthers = false) {
     if(this.$disbanding) return;
     await this.$guildDb.saveGuild(this);
 
-    GuildReloadRedis(this.name);
+    if(forceUpdateOthers) {
+      this.updateAllOnlineMembers();
+    }
+
+    GuildReloadRedis(this.name, forceUpdateOthers);
   }
 
   buildSaveObject() {

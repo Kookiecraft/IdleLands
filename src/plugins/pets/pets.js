@@ -159,7 +159,12 @@ export class Pets {
 
       player.gainGold(-amount, false);
       player.$statistics.incrementStat('Character.Pet.GoldFed', amount);
-      pet.levelUp();
+      if (pet.level === pet._level.maximum) {
+        pet.gainXp(xpNeeded);
+        break;
+      } else {
+        pet.levelUp();
+      }
     }
 
     player._updatePet();
