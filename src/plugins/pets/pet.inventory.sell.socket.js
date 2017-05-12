@@ -5,7 +5,7 @@ import { Logger } from '../../shared/logger';
 export const event = 'plugin:pet:sell';
 export const description = 'Sell an item from your pets inventory.';
 export const args = 'itemId';
-export const socket = (socket) => {
+export const socket = (socket, primus, respond) => {
 
   const petsell = async({ itemId }) => {
     if(!socket.authToken) return;
@@ -17,7 +17,11 @@ export const socket = (socket) => {
     if(!player) return;
     Logger.info('Socket:Pet:Sell', `${playerName} (${socket.address.ip}) pet selling ${itemId}.`);
     
-    player.$pets.sellPetItem(player, itemId);
+    const message = player.$pets.sellPetItem(player, itemId);
+
+    if(message) {
+      respond({ type: 'success', title: 'Pet Message', notify: message });
+    }
   };
 
   socket.on(event, petsell);

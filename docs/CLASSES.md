@@ -54,7 +54,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 18 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Barbarian
@@ -83,7 +83,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Bard
@@ -112,7 +112,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 30 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Beatomancer
@@ -141,7 +141,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Bitomancer
@@ -170,7 +170,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Cleric
@@ -199,7 +199,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 30 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Clockborg
@@ -228,7 +228,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 27 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Druid
@@ -257,7 +257,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 26 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Fencer
@@ -286,7 +286,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Fighter
@@ -315,7 +315,7 @@ STR | DEX | CON | AGI | INT | LUK
 6 | 0 | 0 | 0 | 6 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Generalist
@@ -344,7 +344,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 18 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Jester
@@ -373,7 +373,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 30
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Mage
@@ -402,7 +402,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 42 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## MagicalMonster
@@ -431,7 +431,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 120 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Monster
@@ -460,7 +460,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Necromancer
@@ -489,7 +489,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 72 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Pirate
@@ -518,7 +518,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 30 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Rogue
@@ -547,7 +547,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 6 | 0 | 0 | 0 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## SandwichArtist
@@ -576,7 +576,7 @@ STR | DEX | CON | AGI | INT | LUK
 0 | 0 | 0 | 0 | 12 | 0
 
 
-######[\[top\]](#idlelands-classes)
+###### [\[top\]](#idlelands-classes)
 ---
 
 ## Trickster

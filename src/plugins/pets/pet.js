@@ -38,10 +38,12 @@ export class Pet extends Character {
       itemSellMultiplier: 0,
       itemFindBonus: 0,
       itemFindRangeMultiplier: 0,
-      xpPerGold: 0
+      xpPerGold: 0,
+      salvage: 0
     };
 
     if(this.scaleLevel.xpPerGold > 0) this.scaleLevel.xpPerGold = 0;
+    if(!this.scaleLevel.salvage) this.scaleLevel.salvage = 0;
 
     this.$_scale = new Proxy({}, {
       get: (target, name) => {
@@ -155,6 +157,27 @@ export class Pet extends Character {
 
     this.updatePlayer();
 
+  }
+
+  salvageItem(item, doUpdate = false) {
+    const salvageResult = this.$ownerRef.getSalvageValues(item, (this.$_scale.salvage/100), this.liveStats.luk);
+    this.removeFromInventory(item);
+    this.$ownerRef.__updatePetActive();
+
+    if(doUpdate) {
+      this.$ownerRef.incrementSalvageStatistics(salvageResult);
+    }
+
+    return salvageResult;
+  }
+
+  sellItem(item, force = false) {
+    if(!force && this.$ownerRef.hasGuild && this.smart.salvage && this.$_scale.salvage > 0) {
+      this.salvageItem(item, true);
+      return 0;
+    }
+
+    return super.sellItem(item);
   }
 
   removeFromInventory(removeItem) {

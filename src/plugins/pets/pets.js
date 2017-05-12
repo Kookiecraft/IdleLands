@@ -180,7 +180,7 @@ export class Pets {
 
   togglePetSmartSetting(setting) {
     if(!this.activePet) return;
-    if(!_.includes(['self', 'sell', 'equip'], setting)) return;
+    if(!_.includes(['self', 'sell', 'equip', 'salvage'], setting)) return;
     const pet = this.activePet;
     pet.smart[setting] = !pet.smart[setting];
 
@@ -241,6 +241,8 @@ export class Pets {
     const otherPet = _.find(this.$pets, { $petId: petId });
     if(!otherPet) return 'You do not have that pet!';
 
+    if(otherPet.$petId === pet.$petId) return 'You cannot give it to the same pet!';
+
     if(otherPet.inventoryFull()) return 'Other pet inventory full.';
 
     pet.removeFromInventory(item);
@@ -297,6 +299,57 @@ export class Pets {
     return earned;
   }
 
+  salvageAllPetItems(player) {
+    const pet = this.activePet;
+    if(!pet) return 'You have no pet!';
+
+    if(pet.$_scale.salvage === 0) return 'Your pet cannot salvage!';
+
+    if(!player.hasGuild) return 'You are not in a guild!';
+
+    let woodGained = 0;
+    let clayGained = 0;
+    let stoneGained = 0;
+    let astraliumGained = 0;
+    let crits = 0;
+
+    const items = pet.inventory.length;
+
+    _.each(pet.inventory, item => {
+      const { wood, clay, stone, astralium, isCrit } = pet.salvageItem(item);
+      woodGained += wood;
+      clayGained += clay;
+      stoneGained += stone;
+      astraliumGained += astralium;
+      crits += isCrit;
+
+      pet.removeFromInventory(item);
+    });
+
+
+    player.incrementSalvageStatistics({ wood: woodGained, clay: clayGained, stone: stoneGained, astralium: astraliumGained, isCrit: crits }, items);
+    player.__updatePetActive();
+
+    return `You earned ${woodGained} wood, ${clayGained} clay, ${stoneGained} stone, and ${astraliumGained} astralium by salvaging all items.`;
+  }
+
+  salvagePetItem(player, itemId) {
+    const pet = this.activePet;
+    if(!pet) return 'You have no pet!';
+
+    if(pet.$_scale.salvage === 0) return 'Your pet cannot salvage!';
+
+    const item = _.find(pet.inventory, { id: itemId });
+    if(!item) return 'Item does not exist.';
+
+    if(!player.hasGuild) return 'You are not in a guild!';
+
+    const { wood, clay, stone, astralium, isCrit } = pet.salvageItem(item);
+    player.incrementSalvageStatistics({ wood, clay, stone, astralium, isCrit });
+
+    return `You earned ${wood} wood, ${clay} clay, ${stone} stone, and ${astralium} astralium by ${isCrit ? 'critically ': ' ' }salvaging.`;
+  }
+
   sellPetItem(player, itemId) {
     const pet = this.activePet;
     if(!this.activePet) return;
@@ -304,22 +357,28 @@ export class Pets {
     const item = _.find(pet.inventory, { id: itemId });
     if(!item) return;
 
-    pet.sellItem(item);
+    const goldGained = pet.sellItem(item, true) || 0;
     pet.removeFromInventory(item);
 
     player.__updatePetActive();
+
+    return `Sold ${item.name} for ${goldGained.toLocaleString()} gold.`;
   }
 
   sellAllPetItems(player) {
     const pet = this.activePet;
     if(!this.activePet) return;
 
+    let goldGained = 0;
+
     _.each(pet.inventory, item => {
-      pet.sellItem(item);
+      goldGained += pet.sellItem(item, true) || 0;
       pet.removeFromInventory(item);
     });
 
     player.__updatePetActive();
+
+    return `Sold all items for ${goldGained.toLocaleString()} gold.`;
   }
 
   unequipPetItem(player, itemId) {

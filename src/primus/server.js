@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as Primus from 'primus';
 import * as Emit from 'primus-emit';
-import * as Rooms from 'primus-rooms';
 // import Multiplex from 'primus-multiplex';
 
 import { chatSetup } from '../plugins/chat/chat.setup';
@@ -25,7 +24,7 @@ export const primus = (() => {
     .first();
 
   if(ip) {
-    Logger.info('Server', `Server IP is: ${ip}:${process.env.PORT || 8080}` + (process.env.QUIET ? ' (quiet mode. ssh...)' : ''));
+    Logger.important('Server', `Server IP is: ${ip}:${process.env.PORT || 8080}` + (process.env.QUIET ? ' (quiet mode. ssh...)' : ''));
   }
 
   const express = require('express');
@@ -46,6 +45,12 @@ export const primus = (() => {
     });
   });
 
+  serve.get('/maps/world-maps/guilds/:name', (req, res) => {
+    const guild = GameState.getInstance().guilds.getGuild(req.params.name);
+    if(!guild) return res.status(500).json({ error: 'No map' });
+    res.json(guild.$base.map);
+  });
+
   const finalhandler = require('finalhandler');
 
   // load primus
@@ -61,7 +66,7 @@ export const primus = (() => {
 
   server.listen(process.env.PORT || 8080);
 
-  Logger.info('Server', 'Express started.');
+  Logger.important('Server', 'Express started.');
 
   const primus = new Primus(server, { iknowhttpsisbetter: true, parser: 'JSON', transformer: 'websockets' });
 
@@ -85,7 +90,6 @@ export const primus = (() => {
   const allSocketFunctions = getAllSocketFunctions(normalizedPath);
   const allSocketRequires = _.map(allSocketFunctions, require);
 
-  primus.use('rooms', Rooms);
   primus.use('emit', Emit);
 
   chatSetup(primus);
@@ -115,30 +119,6 @@ export const primus = (() => {
     }
   };
 
-  primus.joinGuildChat = (player) => {
-    if(!player || !player.guildName) return;
-    _.each(primus.players[player.name], spark => {
-      if(!spark) return;
-      try {
-        spark.join(`chat:channel:Guild:${player.guildName}`);
-      } catch(e) {
-        Logger.error('Primus:JoinGuildChat', e);
-      }
-    });
-  };
-
-  primus.leaveGuildChat = (player) => {
-    if(!player || !player.guildName) return;
-    _.each(primus.players[player.name], spark => {
-      if(!spark) return;
-      try {
-        spark.leave(`chat:channel:Guild:${player.guildName}`);
-      } catch(e) {
-        Logger.error('Primus:LeaveGuildChat', e);
-      }
-    });
-  };
-
   primus.emitToPlayers = (players = [], data) => {
     _.each(players, player => {
       _.each(primus.players[player], spark => {
@@ -146,8 +126,6 @@ export const primus = (() => {
       });
     });
   };
-
-  // primus.use('multiplex', Multiplex);
 
 // force setting up the global connection
   new (require('../shared/db-wrapper').DbWrapper)().connectionPromise();
@@ -185,7 +163,7 @@ export const primus = (() => {
           return;
         }
         
-        Logger.info('Primus:Generate', `${root} is installed. Generating a Primus file for it.`);
+        Logger.important('Primus:Generate', `${root} is installed. Generating a Primus file for it.`);
         primus.save(`${path}/primus.gen.js`);
       });
     });

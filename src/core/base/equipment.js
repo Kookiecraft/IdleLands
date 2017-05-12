@@ -23,7 +23,7 @@ export class Equipment {
     int: 2,
     luk: 5,
     enchantLevel: -125,
-    xp: 50,
+    xp: 60,
     hp: 0.5,
     mp: 0.2,
     hpregen: 4,
@@ -47,7 +47,51 @@ export class Equipment {
     power: 100,
     vorpal: 500,
     aegis: 100,
-    glowing: 300
+    glowing: 300,
+    salvage: 2000
+  };
+
+  static woodStats = {
+    str: 25,
+    dex: 25,
+    hp: 100,
+    hpregen: 25
+  };
+
+  static stoneStats = {
+    con: 10,
+    damageReduction: 25,
+    damageReductionPercent: 1
+  };
+
+  static clayStats = {
+    int: 25,
+    agi: 25,
+    mp: 100,
+    mpregen: 25
+  };
+
+  static astraliumStats = {
+    luk: 10,
+    xp: 1,
+    enchantLevel: 1,
+    crit: 1,
+    prone: 1,
+    venom: 1,
+    poison: 1,
+    shatter: 1,
+    vampire: 1,
+    gold: 50,
+    dance: 1,
+    offense: 1,
+    defense: 1,
+    deadeye: 1,
+    lethal: 1,
+    vorpal: 1,
+    silver: 1,
+    power: 1,
+    aegis: 1,
+    glowing: 1
   };
 
   constructor(opts) {
@@ -84,5 +128,30 @@ export class Equipment {
   get fullname() {
     if(this.enchantLevel > 0) return `+${this.enchantLevel} ${this.name}`;
     return `${this.name}`;
+  }
+
+  __calcValueBasedOnStatHash(hash) {
+    let ret = 0;
+    _.each(hash, (mult, attr) => {
+      if(!this[attr]) return;
+      ret += Math.max(0, Math.floor(this[attr] / mult));
+    });
+    return Math.max(0, ~~ret);
+  }
+
+  woodValue() {
+    return this.__calcValueBasedOnStatHash(Equipment.woodStats);
+  }
+
+  stoneValue() {
+    return this.__calcValueBasedOnStatHash(Equipment.stoneStats);
+  }
+
+  clayValue() {
+    return this.__calcValueBasedOnStatHash(Equipment.clayStats);
+  }
+
+  astraliumValue() {
+    return this.__calcValueBasedOnStatHash(Equipment.astraliumStats);
   }
 }

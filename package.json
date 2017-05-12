@@ -1,6 +1,6 @@
 {
   "name": "idlelands",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "An idling game of epic proportions",
   "main": "src/index.js",
   "scripts": {
@@ -14,16 +14,18 @@
     "test:lint": "eslint --quiet src/** test/plugins/**",
     "test:local": "npm run test:lint",
     "test:client": "ts-node src/test/client/client",
-    "generate:all": "npm run generate:spelldoc && npm run generate:classdoc && npm run generate:apidoc && npm run generate:effectdoc && npm run generate:petdoc",
+    "generate:all": "npm run generate:guilddoc && npm run generate:spelldoc && npm run generate:classdoc && npm run generate:apidoc && npm run generate:effectdoc && npm run generate:petdoc",
     "generate:effectdoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-effectdoc",
     "generate:spelldoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-spelldoc",
     "generate:classdoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-classdoc",
     "generate:petdoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-petdoc",
     "generate:apidoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-apidoc",
+    "generate:guilddoc": "cross-env NO_START_GAME=1 ts-node src/_ext-npm/generate-guilddoc",
     "gitfix": "git add docs && git add CHANGELOG.md",
     "gen:items": "node test/gen/items",
     "prerelease": "npm run test && npm run generate:all",
-    "release": "standard-version --no-verify"
+    "release": "standard-version --no-verify",
+    "build:dist": "tsc"
   },
   "engines": {
     "node": "6.5.0"
@@ -66,8 +68,6 @@
     "node-schedule": "^1.2.0",
     "primus": "^5.2.2",
     "primus-emit": "^1.0.0",
-    "primus-multiplex": "^3.2.0",
-    "primus-rooms": "^3.4.1",
     "restricted-number": "^1.1.0",
     "rollbar": "^0.6.2",
     "serve-static": "^1.11.1",

@@ -6,8 +6,6 @@ import { GameState } from '../core/game-state';
 import { Regions } from './regions';
 
 export const SPECIAL_STATS_BASE = [
-  { name: 'hpregen',         desc: 'Regenerate HP every combat round.', enchantMax: 100 },
-  { name: 'mpregen',         desc: 'Regenerate MP every combat round.', enchantMax: 100 },
   { name: 'damageReduction', desc: 'Take 1 fewer damage per point from some sources. Stacks intensity.', enchantMax: 100 },
   { name: 'damageReductionPercent',  desc: '', enchantMax: 1 },
   { name: 'crit',            desc: '+1% crit chance. Stacks intensity.', enchantMax: 1 },
@@ -24,12 +22,15 @@ export const SPECIAL_STATS_BASE = [
   { name: 'sentimentality',  desc: '+1 score. Stacks intensity.', enchantMax: 500 },
   { name: 'hp',              desc: '+1 hp. Stacks intensity.', enchantMax: 2000 },
   { name: 'mp',              desc: '+1 mp. Stacks intensity.', enchantMax: 2000 },
-  { name: 'xp',              desc: 'Gain +1 xp every time xp is gained.', enchantMax: 1 },
-  { name: 'gold',            desc: 'Gain +1 gold every time gold is gained.', enchantMax: 500 }
+  { name: 'hpregen',         desc: 'Regenerate HP every combat round. Stacks intensity.', enchantMax: 100 },
+  { name: 'mpregen',         desc: 'Regenerate MP every combat round. Stacks intensity.', enchantMax: 100 },
+  { name: 'xp',              desc: 'Gain +1 xp every time xp is gained. Stacks intensity.', enchantMax: 1 },
+  { name: 'gold',            desc: 'Gain +1 gold every time gold is gained. Stacks intensity.', enchantMax: 500 },
+  { name: 'salvage',         desc: 'Salvage 10% better resources. Stacks intensity.', enchantMax: 1 }
 ];
 
 export const ATTACK_STATS_BASE = [
-  { name: 'prone',           desc: '+5% chance of stunning an opponent for 1 round.', enchantMax: 1 },
+  { name: 'prone',           desc: '+5% chance of stunning an opponent for 1 round. Stacks intensity (round stun does not stack).', enchantMax: 1 },
   { name: 'venom',           desc: '+5% chance of inflicting venom (DoT, % of target HP) on an enemy. Stacks intensity.', enchantMax: 1 },
   { name: 'poison',          desc: '+5% chance of inflicting poison (DoT, based on caster INT) on an enemy. Stacks intensity.', enchantMax: 1 },
   { name: 'shatter',         desc: '+5% chance of inflicting shatter (-10% CON/DEX/AGI) on an enemy. Stacks intensity.', enchantMax: 1 },
@@ -62,12 +63,20 @@ export class StatCalculator {
 
   static _baseStat(player, stat) {
     return this.classStat(player, stat)
+         + this.guildStat(player, stat)
          + this.effectStat(player, stat)
          + this.regionStat(player, stat)
          + this.equipmentStat(player, stat)
          + this.professionStat(player, stat)
          + this.achievementStat(player, stat)
          + this.personalityStat(player, stat);
+  }
+
+  static guildStat(player, stat) {
+    if(!player.hasGuild) return 0;
+    const boost = player.guild.$statBoosts[stat];
+    if(!boost) return 0;
+    return boost;
   }
 
   static regionStat(player, stat) {
@@ -161,7 +170,7 @@ export class StatCalculator {
 
     _.each(festivals, festival => {
       if(!festival.bonuses[stat]) return;
-      mods += festival.bonuses[stat] * baseValue;
+      mods += festival.bonuses[stat] * (baseValue || 1);
     });
 
     return doRound ? Math.floor(baseValue + mods) : baseValue + mods;

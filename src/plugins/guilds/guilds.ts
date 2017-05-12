@@ -12,6 +12,9 @@ import { SETTINGS } from '../../static/settings';
 
 import { GetRedisPlayers } from '../scaler/redis';
 
+import * as Bases from './bases';
+import * as Buildings from './buildings';
+
 @Dependencies(GuildsDb)
 export class Guilds {
   guildsDb: any;
@@ -96,9 +99,6 @@ export class Guilds {
     const guildCheck: Guild = leader.guild;
     if(guildCheck && guildCheck.$noGuild) return 'You do not have a guild!';
 
-    if(!leader.$premium.canConsume('renameTagGuild')) return 'You do not have a guild rename tag!';
-    leader.$premium.consume(leader, 'renameTagGuild');
-
     name = (''+name).trim();
     tag = (''+tag).trim();
 
@@ -108,6 +108,9 @@ export class Guilds {
 
     if(name.length <= 3 || name.length > 20) return 'Guild name must be between 4 and 20 characters.';
     if(tag.length <= 1 || tag.length > 6) return 'Guild tag must be between 2 and 6 characters';
+
+    if(!leader.$premium.canConsume('renameTagGuild')) return 'You do not have a guild rename tag!';
+    leader.$premium.consume(leader, 'renameTagGuild');
 
     this._renameRetag(guildCheck.name, name, tag);
 
@@ -153,7 +156,7 @@ export class Guilds {
   updatePersonalTaxRate(player, taxRate: number) {
     taxRate = Math.floor(+taxRate);
     if(taxRate < 0) taxRate = 0;
-    if(taxRate > 85) taxRate = 85;
+    if(taxRate > 100) taxRate = 100;
 
     player.guildTaxRate = taxRate;
     player._saveSelf();
@@ -168,6 +171,8 @@ export class Guilds {
     const guild: Guild = player.guild;
     guild.donateGold(player, gold);
     player.$statistics.incrementStat('Character.Gold.Donate', gold);
+
+    return `Successfully donated ${gold} gold.`;
   }
 
   inviteMember(player, newMemberName) {
@@ -182,13 +187,16 @@ export class Guilds {
     if(newMemberRedis) memberExists = true;
     if(!memberExists) return 'That player is not online!';
 
-    if((newMemberRedis && newMemberRedis.hasGuildInvite) || (newMember && newMember.guildInvite && newMember.guildInvite.name !== guild.name)) return 'That player already has an outstanding guild invite!';
+    if((newMemberRedis && newMemberRedis.guildInvite && newMemberRedis.guildInvite.name !== guild.name)
+    || (newMember && newMember.guildInvite && newMember.guildInvite.name !== guild.name)) return 'That player already has an outstanding guild invite!';
 
     if(_.find(guild.members, { name: newMemberName })) return 'That player is already in your roster!';
 
     if((newMember && newMember.hasGuild) || (newMemberRedis && newMemberRedis.guildName)) return 'That person already has a guild!';
 
     guild.inviteMember(player, newMember || newMemberRedis);
+
+    return `Successfully invited ${newMemberName}.`;
   }
 
   private finalizeInviteRemoval(player) {
@@ -199,6 +207,8 @@ export class Guilds {
   }
 
   inviteAccept(player) {
+    if(!player.guildInvite) return 'You do not have an invite!';
+
     const guildName = player.guildInvite.name;
     const guild: Guild = this.guilds[guildName];
 
@@ -217,6 +227,8 @@ export class Guilds {
   }
 
   inviteReject(player) {
+    if(!player.guildInvite) return 'You do not have an invite!';
+
     const guildName = player.guildInvite.name;
     const guild: Guild = this.guilds[guildName];
 
@@ -243,6 +255,8 @@ export class Guilds {
     if(!guild.canKick(mod, member)) return 'You do not have enough privileges to do this!';
 
     guild.kickMember(member);
+
+    return `Sucessfully kicked ${memberName}`;
   }
 
   promoteMember(player, memberName: string) {
@@ -253,6 +267,8 @@ export class Guilds {
     if(guild.isMod(member)) return 'Member already a mod!';
 
     guild.promoteMember(memberName);
+
+    return `Successfully promoted ${memberName}.`;
   }
 
   demoteMember(player, memberName: string) {
@@ -263,6 +279,114 @@ export class Guilds {
     if(!guild.isMod(member)) return 'Member already lowest privileges!';
 
     guild.demoteMember(memberName);
+
+    return `Successfully demoted ${memberName}.`;
+  }
+
+  buildBuilding(player, buildingName, slot) {
+    const guild: Guild = player.guild;
+    if(!guild.isMod(player)) return 'You do not have enough privileges to do this!';
+
+    const buildingProto = Buildings[buildingName];
+    if(!buildingProto) return 'That building does not exist!';
+
+    if(buildingName !== 'GuildHall') {
+      if(!guild.$buildingInstances.GuildHall) return 'You do not have the guild hall built!';
+    }
+
+    const buildCost = guild.$base.costs.build;
+    const cost = buildCost[buildingProto.size];
+    if(guild.gold < cost) return 'You do not have enough gold to construct a building!';
+
+    slot = Math.floor(+slot);
+    if(_.isNaN(slot) || slot < 0 || slot > guild.$base.$slotSizes[buildingProto.size]) return 'Invalid slot.';
+
+    guild.gold -= cost;
+    guild.buildBuilding(buildingName, slot);
+
+    player._updateGuild();
+    player._updateGuildBuildings();
+
+    return `Successfully built ${buildingName}.`;
+  }
+
+  upgradeBuilding(player, buildingName) {
+    const guild: Guild = player.guild;
+    if(!guild.isMod(player)) return 'You do not have enough privileges to do this!';
+
+    const buildingProto = Buildings[buildingName];
+    if(!buildingProto) return 'That building does not exist!';
+
+    if(!guild.$buildingInstances[buildingName]) return 'You have not built that yet!';
+
+    if(buildingName !== 'GuildHall') {
+      if(!guild.$buildingInstances.GuildHall) return 'You do not have the guild hall built!';
+      if(guild.buildings.levels.GuildHall < guild.buildings.levels[buildingName] + 1) return 'Your guild hall must be upgraded first!';
+    }
+
+    const { wood, clay, stone, astralium, gold } = buildingProto.levelupCost(guild.buildings.levels[buildingName] || 1);
+    if(guild.gold < gold) return 'Your guild does not have enough gold!';
+    if(guild.resources.wood < wood) return 'Your guild does not have enough wood!';
+    if(guild.resources.clay < clay) return 'Your guild does not have enough clay!';
+    if(guild.resources.stone < stone) return 'Your guild does not have enough stone!';
+    if(guild.resources.astralium < astralium) return 'Your guild does not have enough astralium!';
+
+    guild.gold -= gold;
+    guild.resources.wood -= wood;
+    guild.resources.clay -= clay;
+    guild.resources.stone -= stone;
+    guild.resources.astralium -= astralium;
+
+    guild.upgradeBuilding(buildingName);
+
+    player._updateGuild();
+    player._updateGuildBuildings();
+
+    return `Successfully upgraded ${buildingName}.`;
+  }
+
+  moveBase(player, newBase) {
+    const guild: Guild = player.guild;
+    if(!guild.isMod(player)) return 'You do not have enough privileges to do this!';
+
+    if(guild.baseLocation === newBase) return 'You are already there!';
+
+    const base = Bases[newBase];
+    if(!base) return 'That base does not exist!';
+
+    const cost = base.moveInCost;
+    if(guild.gold < cost) return 'You do not have enough gold to move!';
+
+    guild.gold -= cost;
+
+    guild.moveBases(newBase);
+
+    player._updateGuild();
+    player._updateGuildBuildings();
+
+    return `Successfully moved base to ${newBase}.`;
+  }
+
+  updateProp(player, buildingName, propName, propValue) {
+    const guild: Guild = player.guild;
+    if(!guild.isMod(player)) return 'You do not have enough privileges to do this!';
+
+    const building = Buildings[buildingName];
+    if(!building) return 'That building does not exist!';
+
+    if(!guild.$buildingInstances[buildingName]) return 'Building not constructed!';
+
+    const prop = _.find(building.properties, { name: propName });
+    if(!prop) return 'That property does not exist!';
+
+    propValue = (''+propValue).trim();
+    if(!propValue) return 'Invalid property value!';
+
+    guild.updateProperty(buildingName, propName, propValue);
+
+    player._updateGuildBuildings();
+
+    return `Successfully updated ${buildingName} "${propName}" to ${propValue}.`;
   }
 
 }

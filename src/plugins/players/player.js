@@ -1,6 +1,9 @@
 
 import * as _ from 'lodash';
 import { Dependencies } from 'constitute';
+import * as Chance from 'chance';
+const chance = new Chance();
+
 import { Character } from '../../core/base/character';
 
 import { GameState } from '../../core/game-state';
@@ -253,17 +256,38 @@ export class Player extends Character {
     if(this.choices.length > this._choiceLimit) {
       if(this.$personalities.isAnyActive(['Affirmer', 'Denier', 'Indecisive'])) {
         const choice = this.choices[0];
+
+        let failed = false;
+
         if(_.includes(choice.choices, 'Yes') && this.$personalities.isActive('Affirmer')) {
-          this.handleChoice({ id: choice.id, response: 'Yes' });
-          this.$statistics.incrementStat('Character.Choice.Affirm');
+          const res = this.handleChoice({ id: choice.id, response: 'Yes' }, false);
+          if(!res) {
+            this.$statistics.incrementStat('Character.Choice.Affirm');
+          } else {
+            failed = true;
+          }
 
         } else if(_.includes(choice.choices, 'No') && this.$personalities.isActive('Denier')) {
-          this.handleChoice({ id: choice.id, response: 'No' });
-          this.$statistics.incrementStat('Character.Choice.Deny');
+          const res = this.handleChoice({ id: choice.id, response: 'No' }, false);
+          if(!res) {
+            this.$statistics.incrementStat('Character.Choice.Deny');
+          } else {
+            failed = true;
+          }
 
         } else if(this.$personalities.isActive('Indecisive')) {
-          this.handleChoice({ id: choice.id, response: _.sample(choice.choices) });
-          this.$statistics.incrementStat('Character.Choice.Indecisive');
+          const res = this.handleChoice({ id: choice.id, response: _.sample(['Yes', 'No']) }, false);
+          if(!res) {
+            this.$statistics.incrementStat('Character.Choice.Indecisive');
+          } else {
+            failed = true;
+          }
+        }
+
+        this.choices.shift();
+
+        if(failed) {
+          this.$statistics.incrementStat('Character.Choice.Ignore');
         }
 
       } else {
@@ -275,13 +299,13 @@ export class Player extends Character {
     this.$statistics.incrementStat('Character.Choices');
   }
 
-  handleChoice({ id, response }) {
+  handleChoice({ id, response }, removeChoice = true) {
     const choice = _.find(this.choices, { id });
     if(!choice) return;
     const result = Events[choice.event].makeChoice(this, id, response);
     if(_.isString(result)) return;
     this.$statistics.batchIncrement(['Character.Choice.Chosen', `Character.Choice.Choose.${response}`]);
-    this.removeChoice(id);
+    if(removeChoice) this.removeChoice(id);
     this.update();
   }
 
@@ -324,6 +348,8 @@ export class Player extends Character {
   togglePersonality(personality) {
     if(!_.find(this.$personalities.earnedPersonalities, { name: personality })) return;
     this.$personalities.togglePersonality(this, personality);
+    this.recalculateStats();
+    this.update();
     this._updatePersonalities();
   }
 
@@ -340,23 +366,29 @@ export class Player extends Character {
     let [index, newLoc, dir] = this.$playerMovement.pickRandomTile(this, weight);
     let tile = this.$playerMovement.getTileAt(this.map, newLoc.x, newLoc.y);
 
-    const partyTileCheck = () => {
-      if(!this.$playerMovement.canEnterTile(this, tile) && this.party) {
+    const partyTileCheck = (tile) => {
+      const party = this.party;
+      if(!party) return;
+
+      const followTarget = party.getFollowTarget(this);
+
+      if((!this.$playerMovement.canEnterTile(this, tile) || (followTarget && followTarget.map !== this.map))) {
         this.$partyStepsLeft = this.$partyStepsLeft || 3;
 
         if(this.$partyStepsLeft <= 0) {
           this.party.playerLeave(this);
+          this.$partyStepsLeft = 0;
         }
 
         this.$partyStepsLeft--;
       }
     };
 
-    partyTileCheck();
+    partyTileCheck(tile);
 
     let attempts = 1;
     while(!this.$playerMovement.canEnterTile(this, tile)) {
-      if(attempts > 8) {
+      if(attempts > 8 && !this.party) {
         Logger.error('Player', new Error(`Player ${this.name} is position locked at ${this.x}, ${this.y} in ${this.map}`));
         break;
       }
@@ -364,7 +396,7 @@ export class Player extends Character {
       [index, newLoc, dir] = this.$playerMovement.pickRandomTile(this, weight);
       tile = this.$playerMovement.getTileAt(this.map, newLoc.x, newLoc.y);
 
-      partyTileCheck();
+      partyTileCheck(tile);
 
       attempts++;
       Logger.silly('Player:Move', `${this.name} doing tile enter check again ${attempts}`);
@@ -395,21 +427,28 @@ export class Player extends Character {
     if(!this.$shop || (oldRegion !== this.mapRegion)) {
       this.$updateShop = true;
 
+      Logger.silly('Player:Move', `${this.name} generating shop`);
       this.$shop = ShopGenerator.regionShop(this);
+      Logger.silly('Player:Move', `${this.name} generated shop`);
     }
 
     this.mapPath = tile.path;
 
+    Logger.silly('Player:Move', `${this.name} handling tile`);
     this.$playerMovement.handleTile(this, tile);
+    Logger.silly('Player:Move', `${this.name} handled tile`);
 
     this.stepCooldown--;
 
     const incrementStats = [
       'Character.Steps',
-      `Character.Maps.${this.map}`,
       `Character.Terrains.${tile.terrain}`,
       `Character.Regions.${tile.region}`
     ];
+
+    if(!_.includes(this.map, 'Guild Base -')) {
+      incrementStats.push(`Character.Maps.${this.map}`);
+    }
 
     if(this.$personalities.isActive('Drunk')) {
       incrementStats.push('Character.Movement.Drunk');
@@ -587,9 +626,19 @@ export class Player extends Character {
   }
 
   _updateGuild() {
-    const guild = this.guild;
-    guild.$me = _.find(guild.members, { name: this.name });
+    let guild = this.guild;
+    if(this.hasGuild) {
+      const guildTrans = guild.buildTransmitObject();
+      guildTrans.$me = _.find(guild.members, { name: this.name });
+      guild = guildTrans;
+    }
+
     this.$dataUpdater(this.name, 'guild', guild);
+  }
+
+  _updateGuildBuildings() {
+    if(!this.hasGuild) return;
+    this.$dataUpdater(this.name, 'guildbuildings', this.guild.buildBuildingTransmitObject());
   }
 
   _updatePet() {
@@ -667,6 +716,33 @@ export class Player extends Character {
 
   get ascensionLevel() {
     return this.$statistics ? this.$statistics.getStat('Character.Ascension.Times') : 0;
+  }
+
+  getSalvageValues(item, baseMultiplier = 1, bonus = 0) {
+    const salvageBoost = this.liveStats.salvage;
+
+    const critSalvageChance = this.calcLuckBonusFromValue(this.liveStats.luk + bonus);
+    const isCrit = chance.integer({ min: 0, max: 10000 }) <= (salvageBoost + critSalvageChance) ? 1 : 0;
+    const multiplier = (salvageBoost / 10) + (isCrit ? 3 : baseMultiplier);
+
+    const wood = Math.round(item.woodValue() * multiplier);
+    const stone = Math.round(item.stoneValue() * multiplier);
+    const clay = Math.round(item.clayValue() * multiplier);
+    const astralium = Math.round(item.astraliumValue() * multiplier);
+
+    return { wood, stone, clay, astralium, isCrit };
+  }
+
+  incrementSalvageStatistics({ wood, stone, clay, astralium, isCrit }, numItems = 1) {
+    this.$statistics.incrementStat('Character.Item.Salvage', numItems);
+
+    if(wood > 0)      this.$statistics.incrementStat('Character.Salvage.Wood', wood);
+    if(stone > 0)     this.$statistics.incrementStat('Character.Salvage.Stone', stone);
+    if(clay > 0)      this.$statistics.incrementStat('Character.Salvage.Clay', clay);
+    if(astralium > 0) this.$statistics.incrementStat('Character.Salvage.Astralium', astralium);
+    if(isCrit > 0)    this.$statistics.incrementStat('Character.Salvage.CriticalSuccess', isCrit);
+
+    this.guild.addResources({ wood, stone, clay, astralium });
   }
 
   ascend() {

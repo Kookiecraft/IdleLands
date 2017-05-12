@@ -38,39 +38,75 @@ export class PlayerMovement {
   static canEnterTile(player, tile) {
     const properties = _.get(tile, 'object.properties');
     if(properties) {
-      if(properties.requireMap)         return player.$statistics.getStat(`Character.Maps.${properties.requireMap}`) > 0;
-      if(properties.requireRegion)      return player.$statistics.getStat(`Character.Regions.${properties.requireRegion}`) > 0;
-      if(properties.requireBoss)        return player.$statistics.getStat(`Character.BossKills.${properties.requireBoss}`) > 0;
-      if(properties.requireClass)       return player.professionName === properties.requireClass;
-      if(properties.requireAchievement) return player.$achievements.hasAchievement(properties.requireAchievement);
-      if(properties.requireCollectible) return player.$collectibles.hasCollectible(properties.requireCollectible);
-      if(properties.requireAscension)   return player.ascensionLevel >= properties.requireAscension;
+      let totalRequirements = 0;
+      let metRequirements = 0;
+
+      if(properties.requireMap) {
+        totalRequirements++;
+        if(player.$statistics.getStat(`Character.Maps.${properties.requireMap}`) > 0) metRequirements++;
+      }
+
+      if(properties.requireRegion) {
+        totalRequirements++;
+        if(player.$statistics.getStat(`Character.Regions.${properties.requireRegion}`) > 0) metRequirements++;
+      }
+
+      if(properties.requireBoss) {
+        totalRequirements++;
+        if(player.$statistics.getStat(`Character.BossKills.${properties.requireBoss}`) > 0) metRequirements++;
+      }
+
+      if(properties.requireClass) {
+        totalRequirements++;
+        if(player.professionName === properties.requireClass) metRequirements++;
+      }
+
+      if(properties.requireAchievement) {
+        totalRequirements++;
+        if(player.$achievements.hasAchievement(properties.requireAchievement)) metRequirements++;
+      }
+
+      if(properties.requireCollectible) {
+        totalRequirements++;
+        if(player.$collectibles.hasCollectible(properties.requireCollectible)) metRequirements++;
+      }
+
+      if(properties.requireAscension) {
+        totalRequirements++;
+        if(player.ascensionLevel >= +properties.requireAscension) metRequirements++;
+      }
+
       if(properties.requireHoliday) {
+        totalRequirements++;
         const { start, end } = SETTINGS.holidays[properties.requireHoliday];
         const today = new Date();
-        return today.getMonth() >= start.getMonth()
+        const meets = today.getMonth() >= start.getMonth()
             && today.getDate()  >= start.getDate()
             && today.getMonth() <= end.getMonth()
             && today.getDate()  <= end.getDate();
+
+        if(meets) metRequirements++;
       }
+
+      if(totalRequirements !== metRequirements) return;
     }
+
     return !tile.blocked && tile.terrain !== 'Void';
   }
 
-  // TODO https://github.com/IdleLands/IdleLandsOld/blob/master/src/character/player/Player.coffee#L347
-  static handleTile(player, tile) {
+  static handleTile(player, tile, ignoreIf) {
     const type = _.get(tile, 'object.type');
 
     const forceEvent = _.get(tile, 'object.properties.forceEvent', '');
     if(forceEvent) {
       if(!Events[forceEvent]) {
-        Logger.error('PlayerMovement', `forceEvent ${forceEvent} does not exist at ${player.x}, ${player.y} in ${player.map}`);
+        Logger.error('PlayerMovement', new Error(`forceEvent ${forceEvent} does not exist at ${player.x}, ${player.y} in ${player.map}`));
         return;
       }
       Events[forceEvent].operateOn(player, tile.object.properties);
     }
 
-    if(!type || !this[`handleTile${type}`]) return;
+    if(!type || !this[`handleTile${type}`] || ignoreIf === type) return;
     this[`handleTile${type}`](player, tile);
   }
 
@@ -88,6 +124,11 @@ export class PlayerMovement {
     const bossparty = MonsterGenerator.generateBossParty(tile.object.name, player);
     if(!bossparty) return;
     BattleBoss.operateOn(player, { bossName: tile.object.name, bosses: bossparty });
+  }
+
+  static handleTileGuildTeleport(player) {
+    if(!player.hasGuild) return;
+    this.handleTileTeleport(player, { object: { properties: { toLoc: 'guildbase', movementType: 'teleport' } } });
   }
 
   static handleTileTrainer(player, tile) {
@@ -129,11 +170,20 @@ export class PlayerMovement {
     if(!dest.destName) dest.destName = dest.map;
 
     if(dest.toLoc) {
-      const toLocData = SETTINGS.locToTeleport(dest.toLoc);
-      dest.x = toLocData.x;
-      dest.y = toLocData.y;
-      dest.map = toLocData.map;
-      dest.destName = toLocData.formalName;
+      if(dest.toLoc === 'guildbase' && player.hasGuild) {
+        const base = player.guild.baseMap;
+        dest.x = base.startLoc[0];
+        dest.y = base.startLoc[1];
+        dest.map = player.guild.baseName;
+        dest.destName = `${player.guildName}'s Guild Base`;
+
+      } else {
+        const toLocData = SETTINGS.locToTeleport(dest.toLoc);
+        dest.x = toLocData.x;
+        dest.y = toLocData.y;
+        dest.map = toLocData.map;
+        dest.destName = toLocData.formalName;
+      }
     }
 
     const destTile = this.getTileAt(dest.map, dest.x, dest.y);
@@ -145,6 +195,8 @@ export class PlayerMovement {
 
     player.oldRegion = player.mapRegion;
     player.mapRegion = tile.region;
+
+    this.handleTile(player, tile, 'Teleport');
 
     player.$statistics.incrementStat(`Character.Movement.${_.capitalize(dest.movementType)}`);
 
@@ -201,11 +253,17 @@ export class PlayerMovement {
     }
     const indexes = [0, 1, 2, 3, 4, 5, 6, 7];
 
-    if(weight.length === 0) {
+    if(weight.length === 0 && !player.party) {
       Logger.error('PlayerMovement', new Error(`${player.name} in ${player.map} @ ${player.x},${player.y} is unable to move due to no weights.`));
     }
 
-    const randomIndex = chance.weighted(indexes, weight);
+    let randomIndex;
+    try {
+      randomIndex = chance.weighted(indexes, weight);
+    } catch(e) {
+      player.moveToStart();
+      Logger.error('PlayerMovement', new Error('Chance.weighted failed. RIP'));
+    }
     const dir = directions[randomIndex];
 
     return [randomIndex, this.num2dir(dir, player.x, player.y), dir];

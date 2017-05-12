@@ -77,8 +77,9 @@ export class PlayerLoad {
   async loadAchievements(player) {
     if(!player.achievementsLink) {
       const achievementsObj = constitute(Achievements);
-      achievementsObj.init({ _id: player.name, achievements: {} });
+      achievementsObj.init({ _id: player.name, achievements: {}, uniqueAchievements: 0 });
       await this.achievementsDb.saveAchievements(achievementsObj);
+      player.achievementsLink = player.name;
       player.achievementsLink = player.name;
       player.$achievements = achievementsObj;
     } else {
@@ -133,6 +134,10 @@ export class PlayerLoad {
       player.$pets.checkPets(player);
 
       player.$premium.checkDonatorFirstTimeBonus(player);
+
+      if(player.hasGuild) {
+        player.guild.verifyPlayer(player);
+      }
 
       player.isOnline = true;
       player.recalculateStats();

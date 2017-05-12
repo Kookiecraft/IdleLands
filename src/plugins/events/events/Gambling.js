@@ -50,7 +50,7 @@ export class Gambling extends Event {
 
     let message = '';
 
-    if(this.chance.bool({ likelihood: odds })) {
+    if(Event.chance.bool({ likelihood: odds })) {
       const winnings = Math.round(cost * multiplier);
       player.gainGold(winnings, false);
       player.$statistics.incrementStat('Character.Gold.Gamble.Win', winnings);

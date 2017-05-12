@@ -8,14 +8,15 @@
 4. [Dolphin](#dolphin)
 5. [Ghostly Shield](#ghostly-shield)
 6. [Ghostly Sword](#ghostly-sword)
-7. [Golden Floating Broom](#golden-floating-broom)
-8. [Minitaur](#minitaur)
-9. [Moose](#moose)
-10. [Octopus](#octopus)
-11. [Parrot](#parrot)
-12. [Pet Rock](#pet-rock)
-13. [Raven](#raven)
-14. [Spellbook](#spellbook)
+7. [Goat](#goat)
+8. [Golden Floating Broom](#golden-floating-broom)
+9. [Minitaur](#minitaur)
+10. [Moose](#moose)
+11. [Octopus](#octopus)
+12. [Parrot](#parrot)
+13. [Pet Rock](#pet-rock)
+14. [Raven](#raven)
+15. [Spellbook](#spellbook)
 
 ---
 
@@ -80,8 +81,10 @@ itemFindRangeMultiplier|0|0.1|0.15|0.2|0.25|---|---
 Cost|0|25,000|45,000|65,000|95,000|---|---
 xpPerGold|25|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Corgi
@@ -133,8 +136,10 @@ itemFindRangeMultiplier|0.05|0.1|0.15|---|---|---|---|---
 Cost|0|20,000|30,000|---|---|---|---|---
 xpPerGold|5|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Digipet
@@ -205,8 +210,10 @@ itemFindRangeMultiplier|0|0.5
 Cost|0|50,000,000
 xpPerGold|1|---
 Cost|0|---
+salvage|100|---
+Cost|0|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Dolphin
@@ -256,8 +263,10 @@ itemFindRangeMultiplier|0|0.05|0.1|0.15|0.2|---|---|---|---
 Cost|0|10,000|50,000|100,000|250,000|---|---|---|---
 xpPerGold|30|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---
+salvage|75|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Ghostly Shield
@@ -328,8 +337,10 @@ itemFindRangeMultiplier|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---
 xpPerGold|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Ghostly Sword
@@ -406,8 +417,65 @@ itemFindRangeMultiplier|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---
 xpPerGold|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
+---
+
+## Goat
+
+### Cost
+500,000 gold
+
+### Category
+Non-Combat
+
+### Description
+Unlocked by becoming a purveyor of natural resources.
+
+### Gear Slots
+
+### Special Stats
+* luk: 300
+
+### Unlock Requirements
+#### Statistics
+* Character.Item.Salvage: 1,000
+* Character.Item.Unequippable: 1,000
+* Character.Movement.Party: 100,000
+
+#### Collectibles
+* Leviathan Egg
+* Twisted Turnip
+
+### Upgrades
+Upgrade/Cost|Tier 1|Tier 2|Tier 3|Tier 4|Tier 5|Tier 6
+---:|:---:|:---:|:---:|:---:|:---:|:---:
+maxLevel|500|---|---|---|---|---
+Cost|0|---|---|---|---|---
+maxItemScore|100|250|500|1,000|---|---
+Cost|0|100,000|250,000|500,000|---|---
+inventory|5|10|15|20|25|30
+Cost|0|50,000|100,000|250,000|400,000|1,000,000
+goldStorage|100,000|5,000,000|1,000,000|10,000,000|---|---
+Cost|0|1,000,000|10,000,000|100,000,000|---|---
+battleJoinPercent|0|---|---|---|---|---
+Cost|0|---|---|---|---|---
+itemFindTimeDuration|21,600|10,800|5,400|1,800|300|---
+Cost|0|100,000|250,000|500,000|1,000,000|---
+itemSellMultiplier|0|---|---|---|---|---
+Cost|0|---|---|---|---|---
+itemFindBonus|0|1|5|10|15|20
+Cost|0|100,000|500,000|1,000,000|1,500,000|2,000,000
+itemFindRangeMultiplier|0|0.05|0.1|0.25|---|---
+Cost|0|500,000|1,000,000|2,500,000|---|---
+xpPerGold|1|---|---|---|---|---
+Cost|0|---|---|---|---|---
+salvage|200|---|---|---|---|---
+Cost|0|---|---|---|---|---
+
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Golden Floating Broom
@@ -431,6 +499,7 @@ Unlocked by helping out.
 * str: 1,000
 * con: 1,000
 * glowing: 10
+* gold: 100
 
 ### Unlock Requirements
 #### Statistics
@@ -459,8 +528,10 @@ itemFindRangeMultiplier|0|0.05|0.1|0.2|0.35
 Cost|0|50,000|100,000|200,000|350,000
 xpPerGold|100|---|---|---|---
 Cost|0|---|---|---|---
+salvage|0|---|---|---|---
+Cost|50|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Minitaur
@@ -529,8 +600,10 @@ itemFindRangeMultiplier|0|0.1|0.2|0.3|---|---
 Cost|0|25,000|45,000|65,000|---|---
 xpPerGold|35|---|---|---|---|---
 Cost|0|---|---|---|---|---
+salvage|0|---|---|---|---|---
+Cost|0|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Moose
@@ -586,8 +659,10 @@ itemFindRangeMultiplier|0.1|0.15|0.2|---|---|---|---
 Cost|0|20,000|45,000|---|---|---|---
 xpPerGold|15|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---
+salvage|50|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Octopus
@@ -641,8 +716,10 @@ itemFindRangeMultiplier|0.15|0.2|0.25|0.3|0.35|0.4|0.45|0.5
 Cost|0|20,000|30,000|40,000|50,000|60,000|70,000|100,000
 xpPerGold|1|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---
+salvage|50|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Parrot
@@ -701,8 +778,10 @@ itemFindRangeMultiplier|0|0.1|0.2|---|---|---|---
 Cost|0|10,000|20,000|---|---|---|---
 xpPerGold|10|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---
+salvage|50|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Pet Rock
@@ -751,8 +830,10 @@ itemFindRangeMultiplier|0|0.05|0.075|0.1|---|---|---|---|---|---|---
 Cost|0|10,000|20,000|40,000|---|---|---|---|---|---|---
 xpPerGold|3|---|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Raven
@@ -812,8 +893,10 @@ itemFindRangeMultiplier|0|0.05|0.1|0.15|---|---|---|---|---|---|---
 Cost|0|20,000|40,000|75,000|---|---|---|---|---|---|---
 xpPerGold|15|---|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---|---
+salvage|25|---|---|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---|---|---
 
-######[\[top\]](#idlelands-pets)
+###### [\[top\]](#idlelands-pets)
 ---
 
 ## Spellbook
@@ -881,4 +964,6 @@ Cost|0|---|---|---|---|---|---|---|---|---
 itemFindRangeMultiplier|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---
 xpPerGold|0|---|---|---|---|---|---|---|---|---
+Cost|0|---|---|---|---|---|---|---|---|---
+salvage|0|---|---|---|---|---|---|---|---|---
 Cost|0|---|---|---|---|---|---|---|---|---

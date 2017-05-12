@@ -60,7 +60,8 @@ export class ItemGenerator extends Generator {
     if(item.name.toLowerCase() !== item.name)         itemClass = 'pro';
     if(_.includes(item.name.toLowerCase(), 'idle')
     || _.includes(item.name.toLowerCase(), 'idling')) itemClass = 'idle';
-    if(item.score > 7500)                             itemClass = 'godly';
+    if(item.score >= 15000)                           itemClass = 'godly';
+    if(item.score >= 100000)                          itemClass = 'goatly';
 
     return itemClass;
   }
@@ -154,6 +155,8 @@ export class ItemGenerator extends Generator {
       })
       .keys()
       .value();
+
+    if(validKeys.length === 0) return;
 
     const numKeys = item.vector ? Math.min(validKeys.length, item.vector) : chance.integer({ min: 1, max: validKeys.length });
     const chosenKeys = _.sampleSize(validKeys, numKeys);

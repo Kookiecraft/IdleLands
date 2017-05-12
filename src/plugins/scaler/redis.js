@@ -128,15 +128,18 @@ if(redisInstance) {
     GMCommands.setStat(playerName, stat, value, false);
   });
 
-  redisInstance.on('gm:ban', ({ playerName }) => {
+  redisInstance.on('gm:ban', ({ playerName, _instance }) => {
+    if(INSTANCE === _instance) return;
     GMCommands.ban(playerName, false);
   });
 
-  redisInstance.on('gm:mute', ({ playerName }) => {
+  redisInstance.on('gm:mute', ({ playerName, _instance }) => {
+    if(INSTANCE === _instance) return;
     GMCommands.mute(playerName, false);
   });
 
-  redisInstance.on('gm:pardon', ({ playerName }) => {
+  redisInstance.on('gm:pardon', ({ playerName, _instance }) => {
+    if(INSTANCE === _instance) return;
     GMCommands.pardon(playerName, false);
   });
 
@@ -173,6 +176,26 @@ if(redisInstance) {
   redisInstance.on('guild:renameretag', ({ guildName, newName, newTag, _instance }) => {
     if(INSTANCE === _instance) return;
     GameState.getInstance().guilds._renameRetag(guildName, newName, newTag);
+  });
+
+  redisInstance.on('guild:buildbuilding', ({ guildName, buildingName, slot, _instance }) => {
+    if(INSTANCE === _instance) return;
+    GameState.getInstance().guilds.getGuild(guildName).buildBuilding(buildingName, slot, false);
+  });
+
+  redisInstance.on('guild:upgradebuilding', ({ guildName, buildingName, _instance }) => {
+    if(INSTANCE === _instance) return;
+    GameState.getInstance().guilds.getGuild(guildName).upgradeBuilding(buildingName, false);
+  });
+
+  redisInstance.on('guild:movebase', ({ guildName, newBase, _instance }) => {
+    if(INSTANCE === _instance) return;
+    GameState.getInstance().guilds.getGuild(guildName).moveBases(newBase, false);
+  });
+
+  redisInstance.on('guild:updateprop', ({ guildName, buildingName, propName, propValue, _instance }) => {
+    if(INSTANCE === _instance) return;
+    GameState.getInstance().guilds.getGuild(guildName).updateProperty(buildingName, propName, propValue, false);
   });
 }
 
@@ -295,4 +318,20 @@ export const GuildDisbandRedis = (guildName) => {
 
 export const GuildRenameRetagRedis = (guildName, newName, newTag) => {
   _emit('guild:renameretag', { guildName, newName, newTag });
+};
+
+export const GuildBuildBuildingRedis = (guildName, buildingName, slot) => {
+  _emit('guild:buildbuilding', { guildName, buildingName, slot });
+};
+
+export const GuildUpgradeBuildingRedis = (guildName, buildingName) => {
+  _emit('guild:upgradebuilding', { guildName, buildingName });
+};
+
+export const GuildMoveBaseRedis = (guildName, newBase) => {
+  _emit('guild:movebase', { guildName, newBase });
+};
+
+export const GuildUpdateBuildingPropertyRedis = (guildName, buildingName, propName, propValue) => {
+  _emit('guild:updateprop', { guildName, buildingName, propName, propValue });
 };
