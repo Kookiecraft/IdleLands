@@ -172,6 +172,7 @@ export class Character {
   }
 
   canEquip(item, rangeBoostMultiplier = 1, useCheckRangeMultiplier = true) {
+    const player = this;
     const myItem = this.equipment[item.type];
     const checkScore = item.score;
     const myScore = myItem ? myItem.score : -1000;
@@ -181,7 +182,56 @@ export class Character {
     if(!useCheckRangeMultiplier) {
       checkRangeMultiplier = 0;
     }
-    return checkScore > 0 && checkScore > (myScore * checkRangeMultiplier) && checkScore <= itemFindRange;
+
+    const meetRequirements = (player.isPlayer) ? _(item)
+      .keys()
+      .filter(stat => _.includes(stat, 'Req'))
+      .every(requirement => {
+        if (requirement.startsWith('a')) {
+          return true;
+          /*const achievementName = _(requirement).trimStart('aReq').replace(/_/g, ' ');
+          if (_.has(player.$achievements.achievements, achievementName)) {
+            return player.$achievements.achievements[achievementName].tier >= item[requirement];
+          }*/
+        }
+        else if (requirement.startsWith('c')) {
+          return true;
+          /*const collectibleName = _(requirement).trimStart('cReq').replace(/_/g, ' ');
+          let count = 0;
+          if (_.has(player.$collectibles.collectibles, collectibleName)) count++;
+          count += player.$collectibles.priorCollectibles[collectibleName] || 0;
+          return count >= item[requirement];*/
+        }
+        else if (requirement.startsWith('s')) {
+          let statisticName = _(requirement).trimStart('sReq').replace(/_/g, ' ').split(' ');
+          if (statisticName[0] === 'Boss' && statisticName[1] === 'Kills') {
+            statisticName[0] = 'Character';
+            statisticName[1] = 'BossKills'
+          }
+          if (statisticName[0] === 'Regions'
+              || statisticName[0] === 'Maps') {
+            statisticName.unshift('Character');
+          }
+          const playerStat = _.reduce(statisticName, (path, stat) => {
+            if (_.has(path, 'last') &&_.has(path, path.last + ' ' + stat)) {
+              return path[path.last + ' ' + stat];
+            }
+            else if (_.has(path, stat)) {
+              return path[stat];
+            }
+            else {
+              if (_.has(path, 'last')) path.last += ' ' + stat;
+              else path.last = stat;
+              return path;
+            }
+          }, _.cloneDeep(player.$statistics.stats));
+          if (!_.isNumber(playerStat) || !_.isFinite(playerStat)) return false;
+          return playerStat >= item[requirement];
+        }
+        return false;
+      }) : false;
+
+    return checkScore > 0 && checkScore > (myScore * checkRangeMultiplier) && checkScore <= itemFindRange && meetRequirements;
   }
 
   equip(item) {

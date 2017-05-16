@@ -81,6 +81,7 @@ export class ItemGenerator extends Generator {
     itemInst.type = type;
     itemInst.itemClass = this.getItemClass(itemInst);
     itemInst.score;
+    
     return this.cleanUpItem(itemInst);
   }
 
@@ -100,7 +101,6 @@ export class ItemGenerator extends Generator {
         this.mergePropInto(item, _.sample(ObjectAssets.prefix));
         iter++;
         i = seti();
-      }
     }
 
     if(chance.integer({ min: 0, max: 100 }) - (prefixBonus * 5) <= 0) {
@@ -148,7 +148,7 @@ export class ItemGenerator extends Generator {
 
     const validKeys = _(item)
       .omitBy((val, prop) => {
-        return _.includes(['enchantLevel', 'foundAt', '_calcScore', '_baseScore', 'vector', 'dropPercent'], prop)
+        return _.inces(['enchantLevel', 'foundAt', '_calcScore', '_baseScore', 'vector', 'dropPercent', 'Req'], prop)
             || _.isNotWritable(item, prop)
             || val === 0
             || _.isString(item[prop]);
@@ -172,6 +172,7 @@ export class ItemGenerator extends Generator {
     _.each(item, (val, attr) => {
       if(_.isNaN(val)) item[attr] = true;
     });
+
     return item;
   }
 }
