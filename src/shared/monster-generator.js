@@ -142,6 +142,18 @@ export class MonsterGenerator extends Generator {
       baseMonster.level = forPlayer && forPlayer.professionName ? forPlayer.level : baseMonster.level;
     }
 
+    if(forPlayer) {
+      const levelDifference = forPlayer.level - baseMonster.level;
+
+      if(levelDifference > 25) {
+        _.each(['str', 'con', 'dex', 'int', 'agi', 'luk'], stat => {
+          const mod = Math.floor(levelDifference / 10);
+          baseMonster[stat] = baseMonster[stat] || 0;
+          baseMonster[stat] += Math.floor(baseMonster[stat] * (mod/100));
+        });
+      }
+    }
+
     monster.init(baseMonster);
 
     if(baseMonster.mirror && forPlayer) {
@@ -152,6 +164,21 @@ export class MonsterGenerator extends Generator {
 
     } else {
       this.equipMonster(monster, baseMonster);
+    }
+
+    if(forPlayer) {
+      const levelDifference = forPlayer.level - monster.level;
+
+      if(levelDifference > 25) {
+
+        _.each(_.values(monster.equipment), item => {
+          _.each(['str', 'con', 'dex', 'int', 'agi', 'luk'], stat => {
+            const mod = Math.floor(levelDifference / 10);
+            item[stat] = item[stat] || 0;
+            item[stat] += Math.floor(item[stat] * (mod/100));
+          });
+        });
+      }
     }
 
     return monster;

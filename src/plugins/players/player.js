@@ -762,6 +762,7 @@ export class Player extends Character {
     this.generateBaseEquipment();
 
     _.each(this.$pets.$pets, pet => {
+      if(pet.category === 'Protector') return;
       pet.unequipAll();
       pet.inventory = [];
     });
@@ -781,6 +782,10 @@ export class Player extends Character {
     this.choices = [];
 
     this.$personalities.turnAllOff(this);
+
+    if(this.party) {
+      this.party.playerLeave(this);
+    }
 
     this.recalculateStats();
     this._checkAchievements();
